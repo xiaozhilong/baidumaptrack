@@ -1,0 +1,143 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>实时轨迹(路书)</title>
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+
+        #map_canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #result {
+            width: 100%
+        }
+    </style>
+    <script src="//api.map.baidu.com/api?v=2.0&ak=2KrGibP5ES5RSW38Rq3O0w01u5vUncXQ"></script>
+    <script src="./lushu.js"></script>
+
+</head>
+
+<body>
+    <div id="map_canvas"></div>
+    <div id="result"></div>
+    <button id="run">开始</button>
+    <button id="stop">停止</button>
+    <button id="pause">暂停</button>
+    <button id="hide">隐藏信息窗口</button>
+    <button id="show">展示信息窗口</button>
+    <script>
+        var marker;
+        var map = new BMap.Map('map_canvas');
+        map.enableScrollWheelZoom();
+        map.centerAndZoom();
+        var url = "ws://127.0.0.1:2020";
+        var ws = null;
+        var carMaster = true;
+        var p = new BMap.Point(113.893718, 22.560856);
+        var arrPois = [];
+        var photo = "http://122.51.227.164:9000/myphone/car.png";
+        arrPois = arrPois.concat(p); // 用于连接两个或多个数组，该方法不会改变现有的数组，而仅仅会返回被连接数组的一个副本。
+        map.setViewport(arrPois);//根据提供的地理区域或坐标设置地图视野，调整后的视野会保证包含提供的地理区域或坐标
+        var lushu2 = new BMapLib.LuShu(map, arrPois, { // 创建路数实体
+            // defaultContent: position.carNo,//展示车牌号
+            moreCarMessage: "",// 自定义展示窗口，用于展示车辆详细信息
+            autoView: true,//是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
+            icon: new BMap.Icon(photo, new BMap.Size(33, 16), { anchor: new BMap.Size(16, 8) }),
+            speed: 100,// 车辆移动速度
+            enableRotation: true,//是否设置marker随着道路的走向进行旋转
+            landmarkPois: []
+        });
+        lushu2.start();// 路数实体开始移动
+        var MovePointArry = [];
+        onLoaded();
+        function onLoaded() {
+            if ("WebSocket" in window) {
+                ws = new WebSocket(url);
+            } else if ("MozWebSocket" in window) {
+                ws = new MozWebSocket(url);
+            } else {
+            }
+
+            ws.onopen = function () {
+            }
+            ws.onclose = function () {
+            }
+
+            ws.onerror = function () {
+            }
+            ws.onmessage = function (msg) {
+
+                if (msg.data instanceof Blob) {
+                    //服务器端发送的是BinaryMessage
+                    // document.getElementById("message_output").innerHTML += msg.data + "<br/>";
+                    console.log(msg.data);
+                    var reader = new FileReader();
+                    reader.onload = function (event) {
+                        var content = reader.result;//内容就在这里
+                        document.getElementById("message_output").innerHTML += content + "<br/>";
+                    };
+                    var data = reader.readAsText(msg.data);
+                } else {
+                    console.log(msg.data);
+                    MovePointArry.push(JSON.parse(msg.data));//添加到数组中去
+                }
+            }
+
+        }
+        setInterval(function () {
+            IsMoveIng();
+        }, 1*1000);
+        function IsMoveIng() {
+            // debugger
+
+            // debugger
+            if (lushu2 != null) {
+                if (!lushu2.getMoving())//是否在移动
+                {
+                    // debugger
+                    if (MovePointArry.length != 0)//不为0就一直调用
+                    {
+                        debugger
+                        var p1 = new BMap.Point(MovePointArry[0].startPot.lng, MovePointArry[0].startPot.lat); // 起始坐标
+                        var p2 = new BMap.Point(MovePointArry[0].endPot.lng, MovePointArry[0].endPot.lat); // 目标坐标
+                        var arrPois = [];
+                        arrPois.push(p1);
+                        arrPois.push(p2);
+                        lushu2.goPath(arrPois);
+                        MovePointArry.shift();
+                        // break;
+                    }
+
+                }
+            }
+        }
+
+        function MarkInfoWindows(lushu) {
+            var div = document.createElement("div");
+            div.style.background = "pink";
+            div.style.border = "1pxsolidred";
+            div.style.width = "50px";
+            div.style.height = "50px";
+            div.style.display = "none"
+            div.innerHTML = "您好!";
+            document.body.appendChild(div);
+            lushu._overlay._div2 = div; // 
+        }
+
+        function list() {
+            alert("1111");
+        }
+
+    </script>
+</body>
+
+</html>

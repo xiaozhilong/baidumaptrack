@@ -1,0 +1,460 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>实时轨迹(路书)</title>
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+
+        #map_canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #result {
+            width: 100%
+        }
+    </style>
+    <script src="./map.js"></script>
+    <script src="//api.map.baidu.com/api?v=2.0&ak=2KrGibP5ES5RSW38Rq3O0w01u5vUncXQ"></script>
+    <!-- <script src="./CustomLuShu.js"></script> -->
+    <script src="./lushu.js"></script>
+    <script src="./vue.min.js"></script>
+    <script src="./jquery.min.js"></script>
+
+
+</head>
+
+<body id="body1">
+    <div id="map_canvas"></div>
+    <div id="result"></div>
+    <button id="run">开始</button>
+    <button id="stop">停止</button>
+    <button id="pause">暂停</button>
+    <button id="hide">隐藏信息窗口</button>
+    <button id="show">展示信息窗口</button>
+    <script>
+        var marker;
+        var point = new BMap.Point(113.825737, 22.66799);
+        var map = new BMap.Map(map_canvas, {
+            minZoom: 12,
+            maxZoom: 18,
+            enableMapClick: false
+        });
+        var driving = new BMap.DrivingRoute(map);
+        map.centerAndZoom(point, 12);
+        map.enableScrollWheelZoom(true);
+        var url = "ws://192.168.1.9:2020";
+        var ws = null;
+        var carMaster = true;
+        var dataVue = new Vue({
+            el: 'body1',
+            //数据
+            data: {
+                timer: null,
+                //校车信息
+                CarInfo: [
+                    //1
+                    // {
+                    //     //移动坐标数组
+                    //     MovePointArry: [
+                    //         // {
+                    //         //     startPot: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     },
+                    //         //     endPort: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     }
+                    //         // }
+                    //     ],
+                    //     //校车编号
+                    //     CarId: 1,
+                    //     //路书对象
+                    //     lushu: null,
+                    //     //坐标数组 包含开始结束
+                    //     PointArry: {
+                    //         startPot: {
+                    //             lng: 0,
+                    //             lat: 0
+                    //         },
+                    //     },
+                    //     //113.893718,22.560856
+                    //     lat: 22.560856,
+                    //     lng: 113.893718
+                    // },
+                    // //2
+                    // {
+                    //     //移动坐标数组
+                    //     MovePointArry: [
+                    //         // {
+                    //         //     startPot: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     },
+                    //         //     endPort: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     }
+                    //         // }
+                    //     ],
+                    //     //校车编号
+                    //     CarId: 2,
+                    //     //路书对象
+                    //     lushu: null,
+                    //     //坐标数组 包含开始结束
+                    //     PointArry: {
+                    //         startPot: {
+                    //             lng: 0,
+                    //             lat: 0
+                    //         },
+                    //     },
+                    //     //113.887753,22.56653
+                    //     lat: 22.56653,
+                    //     lng: 113.887753
+                    // },
+                    // //3
+                    // {
+                    //     //移动坐标数组
+                    //     MovePointArry: [
+                    //         // {
+                    //         //     startPot: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     },
+                    //         //     endPort: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     }
+                    //         // }
+                    //     ],
+                    //     //校车编号
+                    //     CarId: 3,
+                    //     //路书对象
+                    //     lushu: null,
+                    //     //坐标数组 包含开始结束
+                    //     PointArry: {
+                    //         startPot: {
+                    //             lng: 0,
+                    //             lat: 0
+                    //         },
+                    //     },
+                    //     //113.87816,22.559922
+                    //     lat: 22.559922,
+                    //     lng: 113.87816
+                    // },
+                    // //4
+                    // {
+                    //     //移动坐标数组
+                    //     MovePointArry: [
+                    //         // {
+                    //         //     startPot: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     },
+                    //         //     endPort: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     }
+                    //         // }
+                    //     ],
+                    //     //校车编号
+                    //     CarId: 4,
+                    //     //路书对象
+                    //     lushu: null,
+                    //     //坐标数组 包含开始结束
+                    //     PointArry: {
+                    //         startPot: {
+                    //             lng: 0,
+                    //             lat: 0
+                    //         },
+                    //     },
+                    //     //113.88416,22.561791
+                    //     lat: 22.561791,
+                    //     lng: 113.88416
+                    // },
+                    // //5
+                    // {
+                    //     //移动坐标数组
+                    //     MovePointArry: [
+                    //         // {
+                    //         //     startPot: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     },
+                    //         //     endPort: {
+                    //         //         lng: 0,
+                    //         //         lat: 0
+                    //         //     }
+                    //         // }
+                    //     ],
+                    //     //校车编号
+                    //     CarId: 5,
+                    //     //路书对象
+                    //     lushu: null,
+                    //     //坐标数组 包含开始结束
+                    //     PointArry: {
+                    //         startPot: {
+                    //             lng: 0,
+                    //             lat: 0
+                    //         },
+
+                    //     },
+                    //     //113.888688,22.55318
+                    //     lat: 22.55318,
+                    //     lng: 113.888688
+                    // }
+
+                ]
+
+            },
+            //方法
+            methods: {
+                //
+                InitData() {
+                    for (let index = 0; index < 20; index++) {
+                        var carNo = index + 1;
+                        var lng = Data[index].lng;
+                        var lat = Data[index].lat;
+                        var s = {
+                            //移动坐标数组
+                            MovePointArry: [
+                                // {
+                                //     startPot: {
+                                //         lng: 0,
+                                //         lat: 0
+                                //     },
+                                //     endPort: {
+                                //         lng: 0,
+                                //         lat: 0
+                                //     }
+                                // }
+                            ],
+                            //校车编号
+                            CarId: carNo,
+                            //路书对象
+                            lushu: null,
+                            //坐标数组 包含开始结束
+                            PointArry: {
+                                startPot: {
+                                    lng: 0,
+                                    lat: 0
+                                },
+                            },
+                            //113.893718,22.560856
+                            lat: lat,
+                            lng: lng
+                        };
+                        this.CarInfo.push(s);
+                    }
+                },
+                //初始化小车
+                InitCar() {
+                    this.CarInfo.forEach(function (item, index) {
+                        var p = new BMap.Point(item.lng, item.lat);
+                        // console.log(item.PointArry);
+                        item.PointArry.startPot.lng = item.lng;
+                        item.PointArry.startPot.lat = item.lat;
+                        var arrPois = [];
+                        var photo = "http://122.51.227.164:9000/myphone/car.png";
+                        arrPois = arrPois.concat(p); // 用于连接两个或多个数组，该方法不会改变现有的数组，而仅仅会返回被连接数组的一个副本。
+                        // if (carMaster) { // 选择多车时的主视野车
+                        //     map.setViewport(arrPois);//根据提供的地理区域或坐标设置地图视野，调整后的视野会保证包含提供的地理区域或坐标
+                        // }
+                        item.lushu = new BMapLib.LuShu(map, arrPois, { // 创建路数实体
+                            defaultContent: item.CarId,//展示车牌号
+                            moreCarMessage: "",// 自定义展示窗口，用于展示车辆详细信息
+                            autoView: false,//是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
+                            icon: new BMap.Icon(photo, new BMap.Size(33, 16), { anchor: new BMap.Size(16, 8) }),
+                            speed: 1000,// 车辆移动速度
+                            enableRotation: true,//是否设置marker随着道路的走向进行旋转
+                            landmarkPois: [],
+                            line: true,
+                        });
+                        item.lushu.start();// 路数实体开始移动
+                        map.addEventListener('click', startlushu);
+                        function startlushu(e) {
+                            if (!!e.overlay) {// 地图上的覆盖物
+                                var markerId = item.lushu._marker.ba;// 路数实体的在地图上的唯一标识
+                                if (e.overlay.ba == markerId) {
+                                    console.log("222");
+                                    // newlushu._overlay._div2.style.display = "block"; // 打开自定义详细信息窗口
+                                    item.lushu._overlay._div.style.background = "#F40";
+                                    item.lushu._overlay._div.style.color = "#FFF";
+                                    // newlushu._overlay._div.style.background = "pink";
+                                    // newlushu._overlay._div.style.border = "1pxsolidred";
+                                    // newlushu._overlay._div.style.width = "500px";
+                                    // newlushu._overlay._div.style.height = "500px";
+                                    // newlushu._overlay._div.innerHTML = "您好!";
+                                    // newlushu._overlay._div.createElement = "<button>";
+                                    // //添加text ，存放指标权重  
+                                    // var input = document.createElement("input");
+                                    // input.setAttribute('type', 'button');
+                                    // input.setAttribute('ReadOnly', 'True');  //设置文本为只读类型  
+                                    // input.value = "chick me",
+                                    // input.setAttribute("onclick", "alert(this.value)");
+                                    // newlushu._overlay._div.appendChild(input);
+                                    // newlushu._overlay._div.appendChild(input);
+
+                                    // newlushu._overlay._div.style.display = "none"
+                                }
+                            }
+                        }
+                    });
+                },
+                //移动小车
+                //CarId 唯一标识
+                // Point 经纬度
+                MoveCar(CarId, EndPoint) {
+                    // 
+                    this.CarInfo.forEach(function (item, index) {
+                        console.log(item);
+                        if (item.CarId === CarId) {
+                            // var p1 = new BMap.Point(item.PointArry.startPot.lng, item.PointArry.startPot.lat); // 起始坐标
+                            // var p2 = new BMap.Point(EndPoint.lng, EndPoint.lat); // 目标坐标
+                            // if (!item.lushu.getMoving()) {
+                            //调换一下下一个开始起点位置
+                            // item.PointArry.startPot.lng = EndPoint.lng;
+                            // item.PointArry.startPot.lat = EndPoint.lat;
+                            // var arrPois = [];
+                            // arrPois.push(p1);
+                            // arrPois.push(p2);
+                            // item.lushu.goPath(arrPois);
+                            // //调换一下下一个开始起点位置
+                            // item.PointArry.startPot.lng = EndPoint.lng;
+                            // item.PointArry.startPot.lat = EndPoint.lat;
+                            // } else {
+                            // 
+                            var result1 = EndPoint.lng;
+                            var result2 = EndPoint.lat;
+                            // var sss=item.PointArry.startPot;
+                            var sss = JSON.parse(JSON.stringify(item.PointArry.startPot));
+                            console.log(item.PointArry, item.PointArry.startPot);
+                            var s = { startPot: sss, endPort: { lng: result1, lat: result2 } };
+                            item.MovePointArry.push(s);
+                            // var s = JSON.parse(JSON.stringify(item.PointArry.startPot));
+                            item.PointArry.startPot.lng = result1;
+                            item.PointArry.startPot.lat = result2;
+                            // item.MovePointArry.push(item.PointArry);//添加到数组中去
+                            // }
+                        }
+                    });
+                },
+                //webSocker方法
+                WebSocketStart() {
+                    if ("WebSocket" in window) {
+                        ws = new WebSocket(url);
+                    } else if ("MozWebSocket" in window) {
+                        ws = new MozWebSocket(url);
+                    } else {
+                        alert("不支持webSocket");
+                    }
+                    ws.onopen = function () {
+                        console.log("open");
+                    }
+                    ws.onclose = function () {
+                        console.log("close");
+                    }
+                    ws.onerror = function () {
+                        console.log("error");
+                    }
+                    ws.onmessage = function (msg) {
+
+                        if (msg.data instanceof Blob) {
+                            //服务器端发送的是BinaryMessage
+                            // document.getElementById("message_output").innerHTML += msg.data + "<br/>";
+                            console.log(msg.data);
+                            var reader = new FileReader();
+                            reader.onload = function (event) {
+                                var content = reader.result;//内容就在这里
+                                // document.getElementById("message_output").innerHTML += content + "<br/>";
+                            };
+                            var data = reader.readAsText(msg.data);
+                        } else {
+                            
+                            //string类型
+                            var result = JSON.parse(msg.data);
+                            dataVue.MoveCar(result.CarId, result.Point);
+                        }
+                    }
+                },
+                //定时器移动小车
+                TimerMoveCar() {
+                    console.log("timer");
+                    this.CarInfo.forEach(function (item, index) {
+                        if (item.lushu != null) {
+                            if (!item.lushu.getMoving())//是否在移动
+                            {
+                                if (item.MovePointArry.length != 0)//不为0就一直调用
+                                {
+                                    
+                                    var p1 = new BMap.Point(item.MovePointArry[0].startPot.lng, item.MovePointArry[0].startPot.lat); // 起始坐标
+                                    var p2 = new BMap.Point(item.MovePointArry[0].endPort.lng, item.MovePointArry[0].endPort.lat); // 目标坐标
+                                    var arrPois = [];
+                                    arrPois.push(p1);
+                                    arrPois.push(p2);
+                                    var i=0;
+                                    driving.search(p1, p2); // 检索起点与终点的通过路径
+                                    driving.setSearchCompleteCallback(function (results) {// 设置检索结束后的回调函数
+                                        //如果驾车距离过大，大于1500米，证明gps定位偏离，则不执行移动
+                                        debugger
+                                        i++;
+                                        if(i==10)
+                                        {
+                                            
+                                        }
+                                        if (results.getPlan(0).getDistance(false) > 1500) {
+                                            var arrPois = [],
+                                                plan = driving.getResults().getPlan(0);// 返回最近一次检索的结果
+
+                                            for (var j = 0; j < plan.getNumRoutes(); j++) {
+                                                var route = plan.getRoute(j);
+                                                arrPois = arrPois.concat(route.getPath());
+                                            }
+                                            item.lushu.goPath(arrPois); // 设置小车持续移动的坐标点，形成平滑的路径
+                                            // makeMoreCarMessageHtml(position,carlushu.mylushu);// 添加自定义展示窗口信息，由于异步，只能通过函数调用
+                                            item.MovePointArry.shift();
+                                        }
+                                    });
+                                    
+                                    // item.lushu.start();// 路数实体开始移动
+                                  
+                                    // break;
+                                }
+                            }
+                        }
+                    })
+                }
+            },
+            created() {
+                this.InitData();
+                this.WebSocketStart();
+                // clearInterval(this.timer);
+            },
+            mounted() {
+                var that = this;
+                this.InitCar();
+                // this.Gg();
+                // this.TimerMoveCar();
+
+                setInterval(function () {
+                    that.TimerMoveCar();
+                }, 1 * 100);
+            },
+            distroyed: function () {
+                clearInterval(this.timer)
+            }
+        })
+
+
+    </script>
+</body>
+
+</html>
